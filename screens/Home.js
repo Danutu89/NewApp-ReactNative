@@ -1,5 +1,5 @@
 import * as React from 'react';
-import axios from 'axios';
+import {instance} from '../modules/Instance.js';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, AsyncStorage } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,17 +12,14 @@ export default class HomeScreen extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      posts: []
+      posts: [],
+      page: 1
     }
 
   }
 
   fetch = async()=>{
-    let token = await AsyncStorage.getItem('token').then((token)=>{
-      if(token != null)
-        return token;
-    });
-    let posts = await axios.get('http://192.168.1.4:5000/api/home?t='+token).then((resp)=>{
+    let posts = await instance.get('/api/home').then((resp)=>{
       if(resp.status != 200){
         return null;
       }
@@ -31,13 +28,25 @@ export default class HomeScreen extends React.Component {
     this.setState({posts: posts});
   }
 
+  loadMore = async() => {
+    this.setState({page: this.props.page+1});
+
+    let posts = await instance.get('/api/home/'+this.props.page).then((resp)=>{
+      if(resp.status != 200){
+        return null;
+      }
+      return resp.data['posts'];
+    });
+    this.setState({posts: [...this.props.pages, ...posts]});
+  }
+
   componentDidMount(){
     this.fetch();
   }
 
   render(){
     return(
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} onEndReachedThreshold={0.4} onEndReached={this.loadMore.bind(this)}>
         {
           this.state.posts.map((item, key)=>
             <View style={styles.postCard} key={item.id}>

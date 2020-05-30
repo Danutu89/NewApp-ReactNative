@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { MonoText } from '../components/StyledText';
-import axios from 'axios';
+import {instance} from '../modules/Instance.js';
 import JWT from 'expo-jwt';
 import { TextInput, StyleSheet, View, Image, Text, TouchableOpacity, AsyncStorage } from 'react-native';
 
@@ -14,7 +14,7 @@ export default function Login({navigation, route}){
     const [password, onPasswordChangeText] = React.useState("Password");
 
     async function MakeLogin(){
-        const resp = await axios.get('http://192.168.1.4:5000/api/login', {
+        const resp = await instance.get('/api/login', {
             auth: {
                 username: username,
                 password: password
@@ -24,6 +24,7 @@ export default function Login({navigation, route}){
         });
         let token = await resp.data['login'];
         let data = await JWT.decode(token, "mRo48tU4ebP6jIshqaoNf2HAnesrCGHm");
+        instance.defaults.headers.common['Token'] = token;
         for (const key in data) {
             if(typeof(data[key]) == "string" || typeof(data[key]) == "number" || typeof(data[key]) == "bool")
                 await AsyncStorage.setItem(String(key), String(data[key]));
